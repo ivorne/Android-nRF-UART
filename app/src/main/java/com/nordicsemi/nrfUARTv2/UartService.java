@@ -328,7 +328,7 @@ public class UartService extends Service {
     
     public void writeRXCharacteristic(byte[] value)
     {
-    
+		Log.d(TAG, "write TXchar - start");  
     	
     	BluetoothGattService RxService = mBluetoothGatt.getService(RX_SERVICE_UUID);
     	showMessage("mBluetoothGatt null"+ mBluetoothGatt);
@@ -344,9 +344,14 @@ public class UartService extends Service {
             return;
         }
         RxChar.setValue(value);
-    	boolean status = mBluetoothGatt.writeCharacteristic(RxChar);
-    	
-        Log.d(TAG, "write TXchar - status=" + status);  
+        
+        
+    	boolean status = false;
+    	while( !status ) {
+			status = mBluetoothGatt.writeCharacteristic(RxChar);
+		}
+		
+		Log.d(TAG, "write TXchar - finished");  
     }
     
     private void showMessage(String msg) {

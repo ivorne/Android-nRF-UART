@@ -30,6 +30,12 @@ import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.util.Date;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
 
 import com.nordicsemi.nrfUARTv2.UartService;
 
@@ -70,6 +76,7 @@ import android.widget.Toast;
 public class MainActivity extends Activity implements RadioGroup.OnCheckedChangeListener {
     private static final int REQUEST_SELECT_DEVICE = 1;
     private static final int REQUEST_ENABLE_BT = 2;
+    private static final int REQUEST_CHOOSE_FILE = 3;
     private static final int UART_PROFILE_READY = 10;
     public static final String TAG = "nRFUART";
     private static final int UART_PROFILE_CONNECTED = 20;
@@ -84,8 +91,10 @@ public class MainActivity extends Activity implements RadioGroup.OnCheckedChange
     private BluetoothAdapter mBtAdapter = null;
     private ListView messageListView;
     private ArrayAdapter<String> listAdapter;
-    private Button btnConnectDisconnect,btnSend;
-    private EditText edtMessage;
+    private Button btnConnectDisconnect,btnSend,btnFileBrowse,btnFileSend;
+    private EditText edtMessage,edtFilePath;
+    private Uri fileUri = null;
+    
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -103,10 +112,12 @@ public class MainActivity extends Activity implements RadioGroup.OnCheckedChange
         btnConnectDisconnect=(Button) findViewById(R.id.btn_select);
         btnSend=(Button) findViewById(R.id.sendButton);
         edtMessage = (EditText) findViewById(R.id.sendText);
+        btnFileBrowse=(Button) findViewById(R.id.button_fileBrowse);
+        btnFileSend=(Button) findViewById(R.id.button_fileSend);
+        edtFilePath = (EditText) findViewById(R.id.editText_filePath);
         service_init();
 
      
-       
         // Handle Disconnect & Connect button
         btnConnectDisconnect.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -157,6 +168,60 @@ public class MainActivity extends Activity implements RadioGroup.OnCheckedChange
                 
             }
         });
+        
+        btnFileBrowse.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+				Intent intent = new Intent( Intent.ACTION_GET_CONTENT );
+				intent.setType( "*/*" );
+				intent.addCategory( Intent.CATEGORY_OPENABLE );
+				startActivityForResult( Intent.createChooser( intent, "Select a file to send" ), REQUEST_CHOOSE_FILE );
+            }
+        });
+        
+        btnFileSend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+				if( fileUri == null ) {
+					String currentDateTimeString = DateFormat.getTimeInstance().format(new Date());
+					listAdapter.add("["+currentDateTimeString+"] no_file_selected");
+					messageListView.smoothScrollToPosition(listAdapter.getCount() - 1);
+				}
+				
+				try {
+					InputStream fin = getContentResolver().openInputStream( fileUri );
+					
+					byte[] buf = new byte[ 200 ];
+					int read = 0;
+					while( ( read = fin.read( buf ) ) > 0 ) {
+						if( read == 200 ){
+							mService.writeRXCharacteristic( buf );
+						}
+						else {
+							byte[] minbuf = new byte[ read ];
+							for( int i = 0; i < read; i++ )
+								minbuf[ i ] = buf[ i ];
+							mService.writeRXCharacteristic( minbuf );
+						}
+					}
+					
+					//Update the log with time stamp
+					String currentDateTimeString = DateFormat.getTimeInstance().format(new Date());
+					listAdapter.add("["+currentDateTimeString+"] file_TX: '"+fileUri.toString()+"'");
+					messageListView.smoothScrollToPosition(listAdapter.getCount() - 1);
+				}
+				catch( FileNotFoundException e ){
+					String currentDateTimeString = DateFormat.getTimeInstance().format(new Date());
+					listAdapter.add("["+currentDateTimeString+"] FileNotFoundException: '"+fileUri.toString()+"'");
+					messageListView.smoothScrollToPosition(listAdapter.getCount() - 1);
+				}
+				catch( IOException e ){
+					String currentDateTimeString = DateFormat.getTimeInstance().format(new Date());
+					listAdapter.add("["+currentDateTimeString+"] IOException: '"+fileUri.toString()+"'");
+					messageListView.smoothScrollToPosition(listAdapter.getCount() - 1);
+				}
+            }
+        });
      
         // Set initial UI state
         
@@ -204,6 +269,7 @@ public class MainActivity extends Activity implements RadioGroup.OnCheckedChange
                              btnConnectDisconnect.setText("Disconnect");
                              edtMessage.setEnabled(true);
                              btnSend.setEnabled(true);
+                             btnFileSend.setEnabled(true);
                              ((TextView) findViewById(R.id.deviceName)).setText(mDevice.getName()+ " - ready");
                              listAdapter.add("["+currentDateTimeString+"] Connected to: "+ mDevice.getName());
                         	 	messageListView.smoothScrollToPosition(listAdapter.getCount() - 1);
@@ -221,6 +287,7 @@ public class MainActivity extends Activity implements RadioGroup.OnCheckedChange
                              btnConnectDisconnect.setText("Connect");
                              edtMessage.setEnabled(false);
                              btnSend.setEnabled(false);
+                             btnFileSend.setEnabled(false);
                              ((TextView) findViewById(R.id.deviceName)).setText("Not Connected");
                              listAdapter.add("["+currentDateTimeString+"] Disconnected to: "+ mDevice.getName());
                              mState = UART_PROFILE_DISCONNECTED;
@@ -338,6 +405,15 @@ public class MainActivity extends Activity implements RadioGroup.OnCheckedChange
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
+
+		case REQUEST_CHOOSE_FILE:
+			if( resultCode == Activity.RESULT_OK && data != null ) {
+				Uri uri = data.getData();
+				Log.i( TAG, "Uri selected: "+uri.toString() );
+				fileUri = uri;
+				edtFilePath.setText( uri.toString() );
+			}
+			break;
 
         case REQUEST_SELECT_DEVICE:
         	//When the DeviceListActivity return, with the selected device address

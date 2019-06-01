@@ -66,7 +66,53 @@
                 android:text="Send" />
 
         </RelativeLayout>
+        
     </LinearLayout>
+        
+    <LinearLayout
+        android:id="@+id/linearLayout3_File"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+            <Button
+                android:id="@+id/button_fileBrowse"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentRight="true"
+                android:enabled="true"
+                android:text="Browse files" />
+                
+            <EditText
+                android:id="@+id/editText_filePath"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentLeft="true"
+                android:layout_toLeftOf="@+id/sendButton"
+                android:ems="10"
+                android:enabled="false"
+                android:fontFamily="1"
+                android:lines="1"
+                android:maxLength="20"
+                android:maxLines="1"
+                android:shadowRadius="1" />
+                
+                
+            <Button
+                android:id="@+id/button_fileSend"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentRight="true"
+                android:enabled="false"
+                android:text="Send file" />
+
+                
+    </LinearLayout>
+
 
     <RelativeLayout
         android:id="@+id/RelativeLayout1"
