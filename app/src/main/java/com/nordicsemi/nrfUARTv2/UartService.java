@@ -156,24 +156,23 @@ public class UartService extends Service {
                 if (logFile != null) {
                     try {
                         logFile.write(value);
-                        logFile.write(10);// Line-feed
-                    } catch (IOException ex) {
+                        //logFile.write(10);// Line-feed
                     }
-                    return;
+                    catch (IOException ex) {
+                    }
                 }
             }
-
-        } else {
-            final Intent intent = new Intent(action);
-
-            // This is special handling for the Heart Rate Measurement profile.  Data parsing is
-            // carried out as per profile specifications:
-            // http://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml
-            if (TX_CHAR_UUID.equals(characteristic.getUuid())) {
-                intent.putExtra(EXTRA_DATA, characteristic.getValue());
-            }
-            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         }
+        
+		final Intent intent = new Intent(action);
+
+		// This is special handling for the Heart Rate Measurement profile.  Data parsing is
+		// carried out as per profile specifications:
+		// http://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml
+		if (TX_CHAR_UUID.equals(characteristic.getUuid())) {
+			intent.putExtra(EXTRA_DATA, characteristic.getValue());
+		}
+		LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     public class LocalBinder extends Binder {
@@ -400,8 +399,8 @@ public class UartService extends Service {
         logFile = new FileOutputStream(path, true);
         Time now = new Time();
         now.setToNow();
-        String endMessage = "=== Start logging " + now.toString() + "===\n";
-        logFile.write(endMessage.getBytes("UTF-8"));
+        //String endMessage = "=== Start logging " + now.toString() + "===\n";
+        //logFile.write(endMessage.getBytes("UTF-8"));
         broadcastUpdate(ACTION_LOGGING_ENABLED);
     }
 
@@ -410,8 +409,8 @@ public class UartService extends Service {
             try {
                 Time now = new Time();
                 now.setToNow();
-                String endMessage = "=== Finished logging " + now.toString() + "===\n";
-                logFile.write(endMessage.getBytes("UTF-8"));
+                //String endMessage = "=== Finished logging " + now.toString() + "===\n";
+                //logFile.write(endMessage.getBytes("UTF-8"));
                 logFile.close();
             }
             catch(IOException e) {
